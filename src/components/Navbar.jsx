@@ -1,19 +1,20 @@
+// Components/Navbar.jsx
 import { Link, useLocation } from "react-router-dom";
 
 export default function Navbar({ token }){
   const { pathname } = useLocation();
   return (
-    <div className="nav">
+    <div className="site-nav">
       <div className="container nav-inner">
         <Link to="/" className="logo">
           <span className="logo-mark">VS</span>
-          <span>Venta Simple</span>
+          <span className="logo-text">Venta Simple</span>
         </Link>
-        <div style={{display:'flex',gap:'14px',alignItems:'center'}}>
-          <Link to="/#features" className="small">Funciones</Link>
-          <Link to="/#pricing" className="small">Precios</Link>
+        <div className="nav-links">
+          <a href="/#features" className="small">Funciones</a>
+          <a href="/#pricing" className="small">Precios</a>
           {token ? (
-            <Link to="/app" className="btn">Ir al Panel</Link>
+            <Link to="/dashboard" className="btn primary">Ir al Panel</Link>
           ) : (
             <Link to="/auth" className="btn primary">Ingresar</Link>
           )}

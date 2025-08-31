@@ -1,3 +1,4 @@
+// components/LoginForm.jsx
 import { useState } from "react";
 
 export default function LoginForm({ onSubmit = () => {}, loading = false }) {

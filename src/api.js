@@ -134,6 +134,15 @@ export function getSalesSeries(token, { from, to, bucket = "day" }) {
   return request(`/stats/sales-series?${q}`, { headers: { Authorization: `Bearer ${token}` } });
 }
 
+export function getStatsCompare(token, range){
+  const q = new URLSearchParams(range).toString();
+  return request(`/stats/compare?${q}`, { headers: { Authorization: `Bearer ${token}` } });
+}
+export function getSalesHeatmap(token, range){
+  const q = new URLSearchParams(range).toString();
+  return request(`/stats/hours-heatmap?${q}`, { headers: { Authorization: `Bearer ${token}` } });
+}
+
 /* =========================
    Cámaras IA (beta)
 ========================= */

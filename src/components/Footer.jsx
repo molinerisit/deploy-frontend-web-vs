@@ -1,9 +1,10 @@
+// components/footer.jsx
 export default function Footer(){
   return (
-    <footer style={{borderTop:'1px solid var(--border)', marginTop:40}}>
-      <div className="container" style={{display:'flex',justifyContent:'space-between',gap:12,flexWrap:'wrap'}}>
-        <div className="small">© {new Date().getFullYear()} Venta Simple — Gestión Comercial</div>
-        <div className="small">Sync en la nube · Multi-dispositivo · Add-ons: Bot de WhatsApp, Cámaras IA</div>
+    <footer className="site-footer">
+      <div className="container footer-inner">
+        <div>© {new Date().getFullYear()} <b>Venta Simple</b></div>
+        <div className="muted small">Sync en la nube • Multi-dispositivo • Add-ons: WhatsApp Bot, Cámaras IA</div>
       </div>
     </footer>
   );

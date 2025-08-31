@@ -7,7 +7,7 @@ import {
   getLicense,
   refreshLicense,
   subscribe,
-  // 🔽 nuevos atajos
+  // atajos de datos
   createDataExport,
   runCleanupNow,
 } from "../api";
@@ -15,6 +15,7 @@ import { getOrCreateDeviceId } from "../utils/deviceId";
 import SubscribeModal from "../components/SubscribeModal";
 import Toast from "../components/Toast";
 
+/* --------- helpers visuales --------- */
 function Stat({ label, value }) {
   return (
     <div style={statCard}>
@@ -35,20 +36,25 @@ function daysLeft(expiresAt) {
 function themeForStatus(status) {
   const s = String(status || "pending").toLowerCase();
   if (s === "active") {
-    return { bg: "#083c37", border: "#10b981", text: "#d1fae5", chipBg: "transparent", chipText: "#10b981" };
+    return { bg: "#083c37", border: "#10b981", text: "#d1fae5", chipBg: "transparent", chipText: "#10b981", icon: "✅" };
   }
   if (s === "paused") {
-    return { bg: "#0b1220", border: "#64748b", text: "#cbd5e1", chipBg: "transparent", chipText: "#94a3b8" };
+    return { bg: "#0b1220", border: "#64748b", text: "#cbd5e1", chipBg: "transparent", chipText: "#94a3b8", icon: "⏸️" };
   }
   if (s === "cancelled") {
-    return { bg: "#3b0a0a", border: "#f87171", text: "#fee2e2", chipBg: "transparent", chipText: "#f87171" };
+    return { bg: "#3b0a0a", border: "#f87171", text: "#fee2e2", chipBg: "transparent", chipText: "#f87171", icon: "❌" };
   }
   // pending / inactive
-  return { bg: "#3a2a07", border: "#fbbf24", text: "#fde68a", chipBg: "transparent", chipText: "#fbbf24" };
+  return { bg: "#3a2a07", border: "#fbbf24", text: "#fde68a", chipBg: "transparent", chipText: "#fbbf24", icon: "⏳" };
 }
 
 export default function Dashboard({ token, onLogout }) {
   const navigate = useNavigate();
+
+  // ✅ Fallback: si no viene por props, lo leemos de localStorage
+  const localTok = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+  const effToken = token || localTok;
+
   const [license, setLicense] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -56,7 +62,7 @@ export default function Dashboard({ token, onLogout }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState("single");
 
-  // estados para acciones rápidas
+  // estados para acciones rápidas UX
   const [busyPreview, setBusyPreview] = useState(false);
   const [busyExport, setBusyExport] = useState(false);
 
@@ -64,13 +70,13 @@ export default function Dashboard({ token, onLogout }) {
   const myDeviceId = useMemo(() => getOrCreateDeviceId(), []);
 
   useEffect(() => {
-    if (!token) {
+    if (!effToken) {
       navigate("/auth");
       return;
     }
     (async () => {
       try {
-        const lic = await getLicense(token);
+        const lic = await getLicense(effToken);
         setLicense(lic);
       } catch {
         /* ignore */
@@ -78,11 +84,11 @@ export default function Dashboard({ token, onLogout }) {
         setLoading(false);
       }
     })();
-  }, [token, navigate]);
+  }, [effToken, navigate]);
 
   async function doRefresh() {
     try {
-      const lic = await refreshLicense(token);
+      const lic = await refreshLicense(effToken);
       setLicense(lic);
       setToast({ open: true, msg: "Licencia actualizada.", type: "success" });
     } catch {
@@ -98,7 +104,7 @@ export default function Dashboard({ token, onLogout }) {
   async function confirmSubscribe(mpEmail) {
     setModalOpen(false);
     try {
-      const res = await subscribe(selectedPlan, token, mpEmail);
+      const res = await subscribe(selectedPlan, effToken, mpEmail);
       if (res?.init_point) {
         window.location.href = res.init_point;
       } else {
@@ -111,7 +117,7 @@ export default function Dashboard({ token, onLogout }) {
 
   async function attachThisDevice() {
     try {
-      const lic = await attachDevice(token, myDeviceId);
+      const lic = await attachDevice(effToken, myDeviceId);
       setLicense(lic);
       setToast({ open: true, msg: "Dispositivo vinculado.", type: "success" });
     } catch {
@@ -121,7 +127,7 @@ export default function Dashboard({ token, onLogout }) {
 
   async function detachById(id) {
     try {
-      const lic = await detachDevice(token, id);
+      const lic = await detachDevice(effToken, id);
       setLicense(lic);
       setToast({ open: true, msg: "Dispositivo desvinculado.", type: "success" });
     } catch {
@@ -141,7 +147,7 @@ export default function Dashboard({ token, onLogout }) {
   async function quickPreviewCleanup() {
     try {
       setBusyPreview(true);
-      const r = await runCleanupNow(token, { preview: true });
+      const r = await runCleanupNow(effToken, { preview: true });
       const msg = `Se borrarían ${r?.DetalleVenta?.count || 0} DetalleVenta y ${r?.Venta?.count || 0} Venta.`;
       setToast({ open: true, type: "info", msg });
     } catch (e) {
@@ -154,7 +160,7 @@ export default function Dashboard({ token, onLogout }) {
   async function quickExportPdf() {
     try {
       setBusyExport(true);
-      const job = await createDataExport(token, { format: "pdf", range: "olderThanRetention" });
+      const job = await createDataExport(effToken, { format: "pdf", range: "olderThanRetention" });
       setToast({
         open: true,
         type: "success",
@@ -182,7 +188,7 @@ export default function Dashboard({ token, onLogout }) {
           <div style={{ fontSize: 13, color: "#94a3b8" }}>Gestión de licencias, dispositivos y datos</div>
         </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          {/* 🔽 nuevos accesos directos */}
+          {/* accesos directos */}
           <button className="btn" title="Perfil, Retención, Tablas, Exportaciones" onClick={() => navigate("/data")}>
             Datos & Retención
           </button>
@@ -216,13 +222,25 @@ export default function Dashboard({ token, onLogout }) {
           </div>
 
           {/* banner por estado */}
-          <div style={{ background: t.bg, border: `1px solid ${t.border}`, color: t.text, borderRadius: 10, padding: "10px 12px" }}>
+          <div
+            style={{
+              background: t.bg,
+              border: `1px solid ${t.border}`,
+              color: t.text,
+              borderRadius: 10,
+              padding: "10px 12px",
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+            }}
+          >
+            <span aria-hidden>{t.icon}</span>
             {license ? (
               <b>
-                {license.status === "active" && "Tu suscripción está activa ✔"}
-                {license.status === "paused" && "Tu suscripción está en pausa ⚠"}
-                {license.status === "cancelled" && "Tu suscripción fue cancelada ❌"}
-                {!["active", "paused", "cancelled"].includes(license.status) && "Licencia pendiente ⏳"}
+                {license.status === "active" && "Tu suscripción está activa"}
+                {license.status === "paused" && "Tu suscripción está en pausa"}
+                {license.status === "cancelled" && "Tu suscripción fue cancelada"}
+                {!["active", "paused", "cancelled"].includes(license.status) && "Licencia pendiente"}
               </b>
             ) : (
               <b>No tenés licencia activa aún.</b>
@@ -230,7 +248,14 @@ export default function Dashboard({ token, onLogout }) {
           </div>
 
           {/* stats */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12, marginTop: 12 }}>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
+              gap: 12,
+              marginTop: 12,
+            }}
+          >
             <Stat label="Plan" value={license?.plan || "-"} />
             <Stat label="Expira" value={license?.expiresAt ? new Date(license.expiresAt).toLocaleDateString() : "-"} />
             <Stat label="Días restantes" value={remaining} />
@@ -238,13 +263,32 @@ export default function Dashboard({ token, onLogout }) {
           </div>
 
           {/* token */}
-          <div style={{ marginTop: 14, background: "#0b1220", border: "1px solid #1f2937", padding: "12px", borderRadius: 10, color: "#e5e7eb" }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-              <div style={{ fontFamily: "monospace", fontSize: 14, whiteSpace: "nowrap", overflow: "auto" }}>
+          <div
+            style={{
+              marginTop: 14,
+              background: "#0b1220",
+              border: "1px solid #1f2937",
+              padding: "12px",
+              borderRadius: 10,
+              color: "#e5e7eb",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 12,
+                flexWrap: "wrap",
+              }}
+            >
+              <div style={{ fontFamily: "ui-monospace, Menlo, monospace", fontSize: 14, whiteSpace: "nowrap", overflow: "auto" }}>
                 <strong>Token:</strong> {license?.token || "—"}
               </div>
               <div style={{ display: "flex", gap: 8 }}>
-                <button className="btn" onClick={copyToken} disabled={!license?.token}>Copiar token</button>
+                <button className="btn" onClick={copyToken} disabled={!license?.token}>
+                  Copiar token
+                </button>
                 {license?.status !== "active" && (
                   <button className="btn primary" onClick={() => handleSubscribe(license?.plan || "single")}>
                     Activar / Reintentar pago
@@ -262,10 +306,12 @@ export default function Dashboard({ token, onLogout }) {
             {["single", "multi"].map((p) => (
               <div key={p} style={planRowDark}>
                 <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                  <div style={planIconDark}>{p === "multi" ? "🖥️🖥️🖥️" : "🖥️"}</div>
+                  <div style={planIconDark} aria-hidden>{p === "multi" ? "🖥️🖥️🖥️" : "🖥️"}</div>
                   <div>
                     <div style={{ fontWeight: 700, textTransform: "capitalize", color: "#e5e7eb" }}>{p}</div>
-                    <div style={{ fontSize: 13, color: "#94a3b8" }}>{p === "multi" ? "Hasta 3 dispositivos" : "1 dispositivo"}</div>
+                    <div style={{ fontSize: 13, color: "#94a3b8" }}>
+                      {p === "multi" ? "Hasta 3 dispositivos" : "1 dispositivo"}
+                    </div>
                   </div>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -283,7 +329,8 @@ export default function Dashboard({ token, onLogout }) {
           </div>
 
           <div style={{ marginTop: 12, fontSize: 13, color: "#cbd5e1" }}>
-            ¿Querés sumar el <strong>bot de WhatsApp</strong> o el módulo de <strong>cámaras IA</strong>? Comunicate con soporte y lo activamos como adicional.
+            ¿Querés sumar el <strong>bot de WhatsApp</strong> o el módulo de <strong>cámaras IA</strong>? Comunicate con soporte y lo
+            activamos como adicional.
           </div>
         </div>
       </section>
@@ -297,7 +344,11 @@ export default function Dashboard({ token, onLogout }) {
           </div>
 
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            <button className="btn" onClick={() => navigate("/data")} title="Ajustar días de retención, PDF automático, tablas">
+            <button
+              className="btn"
+              onClick={() => navigate("/data")}
+              title="Ajustar días de retención, PDF automático, tablas"
+            >
               Abrir Datos & Retención
             </button>
             <button
@@ -347,7 +398,12 @@ export default function Dashboard({ token, onLogout }) {
                 onChange={(e) => setDeviceIdInput(e.target.value)}
                 style={inputDark}
               />
-              <button className="btn" onClick={() => { if (deviceIdInput) detachById(deviceIdInput); }}>
+              <button
+                className="btn"
+                onClick={() => {
+                  if (deviceIdInput) detachById(deviceIdInput);
+                }}
+              >
                 Quitar ID
               </button>
             </div>
@@ -356,7 +412,7 @@ export default function Dashboard({ token, onLogout }) {
           {devices.length > 0 ? (
             <ul style={{ marginTop: 12, paddingLeft: 18, color: "#e5e7eb" }}>
               {devices.map((d) => (
-                <li key={d} style={{ marginBottom: 6, fontFamily: "monospace" }}>
+                <li key={d} style={{ marginBottom: 6, fontFamily: "ui-monospace, Menlo, monospace" }}>
                   {d}{" "}
                   <button className="btn" style={{ padding: "4px 8px", fontSize: 12 }} onClick={() => detachById(d)}>
                     Quitar
@@ -371,33 +427,35 @@ export default function Dashboard({ token, onLogout }) {
       </section>
 
       {/* Modal suscripción */}
-      <SubscribeModal
-        open={modalOpen}
-        plan={selectedPlan}
-        onClose={() => setModalOpen(false)}
-        onConfirm={confirmSubscribe}
-      />
+      <SubscribeModal open={modalOpen} plan={selectedPlan} onClose={() => setModalOpen(false)} onConfirm={confirmSubscribe} />
 
       {/* Toast */}
-      <Toast
-        open={toast.open}
-        type={toast.type}
-        message={toast.msg}
-        onClose={() => setToast({ ...toast, open: false })}
-      />
+      <Toast open={toast.open} type={toast.type} message={toast.msg} onClose={() => setToast({ ...toast, open: false })} />
     </div>
   );
 }
 
-/* ---------- estilos inline (dark cards, sin blancos) ---------- */
+/* ---------- estilos inline (dark cards, coherentes con tu theme) ---------- */
 const pageWrap = {
   maxWidth: 1120,
   margin: "30px auto",
   padding: "0 16px",
   background: "linear-gradient(180deg, rgba(2,6,23,0.6) 0%, rgba(2,6,23,0) 160px)",
 };
-const headerWrap = { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 };
-const grid2col = { display: "grid", gridTemplateColumns: "minmax(280px, 1fr) minmax(280px, 0.8fr)", gap: 16, alignItems: "start" };
+
+const headerWrap = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  marginBottom: 16,
+};
+
+const grid2col = {
+  display: "grid",
+  gridTemplateColumns: "minmax(280px, 1fr) minmax(280px, 0.8fr)",
+  gap: 16,
+  alignItems: "start",
+};
 
 const cardDark = {
   background: "#0f172a", // slate-900
@@ -407,7 +465,13 @@ const cardDark = {
   boxShadow: "0 6px 24px rgba(0,0,0,.25)",
   color: "#e5e7eb",
 };
-const cardHeader = { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 };
+
+const cardHeader = {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  marginBottom: 10,
+};
 
 const statCard = {
   background: "#111827", // gray-900
@@ -426,6 +490,7 @@ const planRowDark = {
   padding: 12,
   background: "#0b1220", // dark navy
 };
+
 const planIconDark = {
   width: 36,
   height: 36,
@@ -448,11 +513,12 @@ const alertInfo = {
 };
 
 const inputDark = {
-  padding: "8px 10px",
-  border: "1px solid #334155",
-  borderRadius: 8,
+  padding: "10px 12px",
+  border: "1px solid #2b3a57",
+  borderRadius: 10,
   minWidth: 260,
   background: "#0b1220",
   color: "#e5e7eb",
   outline: "none",
+  transition: "border-color .15s ease, box-shadow .15s ease",
 };

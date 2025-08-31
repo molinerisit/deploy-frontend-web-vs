@@ -1,3 +1,4 @@
+// hooks/useAuth.js
 import { useState, useCallback } from "react";
 import { api } from "../api";
 

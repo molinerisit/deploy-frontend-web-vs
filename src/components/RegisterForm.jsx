@@ -1,3 +1,4 @@
+// components/RegisterForm.jsx
 import { useState } from "react";
 
 export default function RegisterForm({ onSubmit = () => {}, loading = false }) {

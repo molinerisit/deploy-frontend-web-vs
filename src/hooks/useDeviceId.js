@@ -1,3 +1,4 @@
+// hooks/useDeviceId.js
 export function useDeviceId(){
   const key = "device_id";
   let id = localStorage.getItem(key);

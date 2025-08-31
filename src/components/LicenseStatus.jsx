@@ -1,3 +1,4 @@
+// components/licenseStatus.jsx
 export default function LicenseStatus({ license, onDetach, deviceId }){
   if(!license) return <p className="small">No tenés licencia activa.</p>;
   const isActive = license.status === "active";

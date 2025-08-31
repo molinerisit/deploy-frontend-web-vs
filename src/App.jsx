@@ -2,10 +2,10 @@
 import { useEffect, useState } from "react";
 import { Routes, Route, Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import DataAdmin from "./routes/DataAdmin";
-
 import Auth from "./routes/Auth";
 import Dashboard from "./routes/Dashboard";
 import Account from "./routes/Account";
+import Landing from "./routes/Landing"; // 👈 importa tu landing
 import { refreshLicense } from "./api";
 
 // Ruta protegida
@@ -34,9 +34,20 @@ function ReturnHandler({ token }) {
 export default function App() {
   const [token, setToken] = useState(() => localStorage.getItem("token"));
 
+  // Mantener sincronizado si cambia localStorage (otra pestaña, etc.)
+  useEffect(() => {
+    const onStorage = (e) => {
+      if (e.key === "token") setToken(localStorage.getItem("token"));
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
+
   function handleLogin(newToken) {
-    localStorage.setItem("token", newToken);
-    setToken(newToken);
+    if (newToken) {
+      localStorage.setItem("token", newToken);
+      setToken(newToken);
+    }
   }
   function handleLogout() {
     localStorage.removeItem("token");
@@ -45,8 +56,23 @@ export default function App() {
 
   return (
     <Routes>
-      {/* Home */}
-      <Route path="/" element={token ? <Navigate to="/dashboard" replace /> : <Navigate to="/auth" replace />} />
+      {/* Home: si hay token → dashboard, si no → Landing */}
+      <Route
+        path="/"
+        element={
+          token ? (
+            <Navigate to="/dashboard" replace />
+          ) : (
+            <Landing
+              onStart={(plan) => {
+                // si viene plan desde la landing, lo pasamos por query
+                const q = plan ? `?plan=${encodeURIComponent(plan)}` : "";
+                return window.location.assign(`/auth${q}`);
+              }}
+            />
+          )
+        }
+      />
 
       {/* Auth */}
       <Route path="/auth" element={<Auth onLogin={handleLogin} />} />
@@ -71,12 +97,6 @@ export default function App() {
         }
       />
 
-      {/* Return desde MP */}
-      <Route path="/return" element={<ReturnHandler token={token} />} />
-
-      {/* 404 */}
-      <Route path="*" element={<Navigate to="/" replace />} />
-
       {/* Datos & Retención */}
       <Route
         path="/data"
@@ -86,6 +106,12 @@ export default function App() {
           </Protected>
         }
       />
+
+      {/* Return desde MP */}
+      <Route path="/return" element={<ReturnHandler token={token} />} />
+
+      {/* 404 */}
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }

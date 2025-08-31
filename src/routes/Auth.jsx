@@ -7,6 +7,7 @@ const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:4000";
 function LoginFormInline({ onSubmit = () => {}, loading = false }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
   return (
     <form
       onSubmit={async (e) => {
@@ -15,28 +16,34 @@ function LoginFormInline({ onSubmit = () => {}, loading = false }) {
       }}
     >
       <div className="field">
-        <label>Email</label>
+        <label className="label">Email</label>
         <input
+          className="input"
           type="email"
           autoComplete="username"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
           disabled={loading}
+          placeholder="tu@email.com"
         />
       </div>
+
       <div className="field">
-        <label>Contraseña</label>
+        <label className="label">Contraseña</label>
         <input
+          className="input"
           type="password"
           autoComplete="current-password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
           disabled={loading}
+          placeholder="••••••••"
         />
       </div>
-      <button type="submit" className="btn btn-primary" disabled={loading}>
+
+      <button type="submit" className="btn primary" disabled={loading}>
         {loading ? "Ingresando..." : "Ingresar"}
       </button>
     </form>
@@ -46,6 +53,7 @@ function LoginFormInline({ onSubmit = () => {}, loading = false }) {
 function RegisterFormInline({ onSubmit = () => {}, loading = false }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
   return (
     <form
       onSubmit={async (e) => {
@@ -54,43 +62,47 @@ function RegisterFormInline({ onSubmit = () => {}, loading = false }) {
       }}
     >
       <div className="field">
-        <label>Email</label>
+        <label className="label">Email</label>
         <input
+          className="input"
           type="email"
           autoComplete="username"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
           disabled={loading}
+          placeholder="tu@email.com"
         />
       </div>
+
       <div className="field">
-        <label>Contraseña</label>
+        <label className="label">Contraseña</label>
         <input
+          className="input"
           type="password"
           autoComplete="new-password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
           disabled={loading}
+          placeholder="Mínimo 8 caracteres"
         />
       </div>
-      <button type="submit" className="btn btn-primary" disabled={loading}>
+
+      <button type="submit" className="btn primary" disabled={loading}>
         {loading ? "Creando..." : "Crear cuenta"}
       </button>
     </form>
   );
 }
 
-export default function Auth() {
+export default function Auth({ onLogin }) {
   const [mode, setMode] = useState("login"); // "login" | "register"
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const navigate = useNavigate();
 
-  const goDashboard = () => navigate("/dashboard");
-
-  const handleLogin = async ({ email, password }) => {
+  async function handleLogin({ email, password }) {
     setErrorMsg("");
     setLoading(true);
     try {
@@ -101,16 +113,18 @@ export default function Auth() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || "Error al iniciar sesión");
-      localStorage.setItem("token", data.token);
-      goDashboard();
+
+      // delegamos persistencia al App (onLogin)
+      onLogin?.(data.token, data.user);
+      navigate("/dashboard", { replace: true });
     } catch (e) {
       setErrorMsg(e.message || "Error de login");
     } finally {
       setLoading(false);
     }
-  };
+  }
 
-  const handleRegister = async ({ email, password }) => {
+  async function handleRegister({ email, password }) {
     setErrorMsg("");
     setLoading(true);
     try {
@@ -131,18 +145,19 @@ export default function Auth() {
       });
       const d2 = await r2.json();
       if (!r2.ok) throw new Error(d2?.error || "Error al iniciar sesión");
-      localStorage.setItem("token", d2.token);
-      goDashboard();
+
+      onLogin?.(d2.token, d2.user);
+      navigate("/dashboard", { replace: true });
     } catch (e) {
       setErrorMsg(e.message || "Error en el registro");
     } finally {
       setLoading(false);
     }
-  };
+  }
 
   return (
     <div className="auth-page">
-      <div className="card">
+      <div className="card auth-card">
         <h1 style={{ marginBottom: 8 }}>
           {mode === "login" ? "Iniciar sesión" : "Crear cuenta"}
         </h1>
@@ -176,12 +191,8 @@ export default function Auth() {
                 type="button"
                 onClick={() => setMode("register")}
                 disabled={loading}
-                style={{
-                  textDecoration: "underline",
-                  background: "none",
-                  border: 0,
-                  cursor: "pointer",
-                }}
+                className="btn ghost btn-sm"
+                style={{ textDecoration: "underline", paddingInline: 8 }}
               >
                 Registrate
               </button>
@@ -193,12 +204,8 @@ export default function Auth() {
                 type="button"
                 onClick={() => setMode("login")}
                 disabled={loading}
-                style={{
-                  textDecoration: "underline",
-                  background: "none",
-                  border: 0,
-                  cursor: "pointer",
-                }}
+                className="btn ghost btn-sm"
+                style={{ textDecoration: "underline", paddingInline: 8 }}
               >
                 Iniciar sesión
               </button>
