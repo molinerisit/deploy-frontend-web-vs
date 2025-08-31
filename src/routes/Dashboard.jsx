@@ -15,6 +15,9 @@ import { getOrCreateDeviceId } from "../utils/deviceId";
 import SubscribeModal from "../components/SubscribeModal";
 import Toast from "../components/Toast";
 
+/* --------- CONFIG DESCARGA --------- */
+const DESKTOP_URL = import.meta.env.VITE_DESKTOP_DOWNLOAD_URL || "https://tu-servidor/venta-simple-installer";
+
 /* --------- helpers visuales --------- */
 function Stat({ label, value }) {
   return (
@@ -143,6 +146,17 @@ export default function Dashboard({ token, onLogout }) {
     );
   }
 
+  // --- Descarga programa ---
+  function downloadProgram() {
+    if (!DESKTOP_URL) {
+      setToast({ open: true, type: "error", msg: "No hay URL de descarga configurada." });
+      return;
+    }
+    // Abrimos en la misma pestaña (push) o nueva. Elegí la que prefieras:
+    window.location.href = DESKTOP_URL; // “push” directo
+    // window.open(DESKTOP_URL, "_blank"); // alternativa en nueva pestaña
+  }
+
   // --- Acciones rápidas (UX) ---
   async function quickPreviewCleanup() {
     try {
@@ -195,6 +209,8 @@ export default function Dashboard({ token, onLogout }) {
           <button className="btn" title="Ir a Estadísticas" onClick={() => navigate("/data#stats")}>
             Ver estadísticas
           </button>
+          {/* NUEVO: botón descargar */}
+          <button className="btn primary" onClick={downloadProgram}>Descargar programa</button>
           <button className="btn" onClick={() => navigate("/account")}>Cuenta</button>
           <button className="btn danger" onClick={onLogout}>Cerrar sesión</button>
         </div>
@@ -374,6 +390,24 @@ export default function Dashboard({ token, onLogout }) {
           <p className="muted" style={{ marginTop: 10 }}>
             Sugerencia: mantené la retención en ≤ 60 días para conservar la base optimizada. Podés programar PDF automático antes de borrar.
           </p>
+        </div>
+      </section>
+
+      {/* DESCARGA PROGRAMA (opcional, además del botón del header) */}
+      <section style={{ marginTop: 16 }}>
+        <div style={cardDark}>
+          <div style={cardHeader}>
+            <h3 style={{ margin: 0, color: "#e5e7eb" }}>Descarga del programa</h3>
+            <div style={{ fontSize: 13, color: "#94a3b8" }}>Instalador para PC</div>
+          </div>
+          <p className="muted" style={{ marginTop: 6 }}>
+            Descargá el instalador del programa local para usar Venta Simple en tu computadora.
+          </p>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}>
+            <button className="btn primary" onClick={downloadProgram}>
+              Descargar programa
+            </button>
+          </div>
         </div>
       </section>
 
